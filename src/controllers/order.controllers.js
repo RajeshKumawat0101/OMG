@@ -6,6 +6,9 @@ const viewOrders = async (req, res) => {
         let page = (req?.body?.page)|| 1;
         const limitValue = (req?.body?.limitValue) || 10;
         const totalOrders = await Order.countDocuments();
+        if(totalOrders === 0){
+            return res.status(200).json({data : [], message : "No Orders"});
+        }
         const totalPage = Math.ceil(totalOrders / limitValue);
         if(page > totalPage){
             page = totalPage;
@@ -18,8 +21,8 @@ const viewOrders = async (req, res) => {
         return res.status(200).json({message : "Successfully fetched orderes", data : orders,page,totalPage});
     
     } catch (error) {
-        console.log("eroro ",error.message);
-        return res.status(500).json({message : " Something went wrong"});
+        console.log("Error message is ",error.message);
+        return res.status(500).json({message : " Something went wrong",error : error.message});
     }
 }
 
@@ -27,7 +30,7 @@ const addOrder = async (req, res) =>{
     try {
         const {patientName, doctorName, medicines} = req?.body;
         if(!patientName || !doctorName || (Array.isArray(medicines) && medicines.length == 0)){
-            throw new Error("All Fields are required")
+           return res.status(400).json({message : "All Fields Required"});
         }
         const order = await Order.create({
             patientName,
@@ -44,6 +47,7 @@ const addOrder = async (req, res) =>{
             data : order
         })
     } catch (error) {
+        console.log("Error message is ",error.message);
         return res.status(500).json({message : " something wrong happened", error});
     }
 }
@@ -54,15 +58,16 @@ const deleteOrder = async (req, res) => {
     
         const validId = mongoose.Types.ObjectId.isValid(id);
         if(!validId){
-           throw new Error("Not a valid order");
+           return res.status(400).json({message : "Not Valid Order ID"});
         }
     
         const deletedOrder = await Order.findOneAndDelete({_id : id})
         if(!deletedOrder){
-            throw new Error("Not found the order that being to delete");
+           return res.status(404).json({message: "Not found the order that being to delete"});
         }
         return res.status(200).json({code : 200 , message : " order deleted successfully"});
     } catch (error) {
+        console.log("Error message is ",error.message);
         return res.status(500).json({message : " Something went wrong"});
     }
 }
